@@ -1,0 +1,58 @@
+name: Test and deploy app
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  display-username:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Display SoftUni username
+      run: echo "Tectonik"
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout current branch
+      uses: actions/checkout@v4
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Add dependencies
+      run: npm install
+
+    - name: Install playwright
+      run: npx playwright install
+
+    - name: Start app
+      run: npm start &
+
+    - name: Run unit tests
+      run: npm run test:unit
+
+    - name: Run UI tests
+      run: npm run test:ui
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout current branch
+      uses: actions/checkout@v4
+
+    - name: Deploying to render
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.RENDER_SERVICE_ID }}
+        api-key: ${{ secrets.RENDER_API_KEY }}
